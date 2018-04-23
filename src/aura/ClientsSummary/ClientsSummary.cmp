@@ -1,0 +1,151 @@
+<aura:component implements="force:appHostable" controller="L_ClientSummaryController">
+    <aura:attribute name="searchStr" type="String" default=""/>
+    <aura:attribute name="clients" type="List[]"/>
+    <aura:attribute name="typesSummary" type="String[]"/>
+    <aura:attribute name="selectedSummaryType" type="String" default="All"/>
+    <aura:attribute name="selectedClient" type="String" default=""/>
+    <aura:attribute name="resSearchBase" type="Object" />
+    <aura:attribute name="resSearch" type="Object" />
+    <aura:attribute name="isCheck" type="Boolean" default="false"/>
+    <aura:attribute name="isShow" type="Boolean" default="false"/>
+    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    
+    <div class="slds-grid ">
+        <div class="slds-col slds-size_12-of-12 slds-medium-size_12-of-12 slds-large-size_12-of-12">
+            <article class="slds-card">
+                <div class="slds-card__header slds-grid">
+                    <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                        <div class="slds-media__figure">
+                            <span class="slds-icon_container slds-icon-standard-contact" title="description of icon when needed">
+                                <lightning:icon iconName="standard:scan_card" alternativeText="Clients Summary"/>
+                            </span>
+                        </div>
+                        <div class="slds-media__body">
+                            <h2>
+                                <a href="javascript:void(0);" class="slds-card__header-link slds-truncate" title="[object Object]">
+                                    <span class="slds-text-heading_small">
+                                        Clients Summary
+                                    </span>
+                                </a>
+                            </h2>
+                        </div>
+                    </header>
+                </div>
+            </article>
+        </div>
+    </div>
+    
+    <aura:if isTrue="{!v.isShow}">
+        <div class="slds-grid slds-wrap slds-gutters  ">
+            <div class="slds-col slds-size_12-of-12 slds-medium-size_4-of-12 slds-large-size_3-of-12 slds-m-top_medium">
+                <article class="slds-card">
+                    <div class="slds-card__body slds-m-around_medium">
+                        <div class="slds-form slds-form_stacked">
+                            <div class="slds-form-element">
+                                <div class="slds-form-element__control">
+                                    <lightning:input type="search" label="Find client" name="search"  onchange="{!c.search}"   value='{!v.searchStr}'/>
+                                    <div class="slds-form-element">
+                                        <div class="slds-form-element__control">
+                                            <div class="slds-clearfix">
+                                                <ui:inputCheckbox aura:id="checkbox" change="{!c.onCheck}" label="&nbsp;&nbsp;All (the information for all clients)" class="slds-float_left"/>
+                                                <span class="slds-form-element__label"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                <article class="slds-card">
+                    <div class="slds-card__body slds-m-around_medium">
+                        <lightning:select aura:id="selectCl" name="select" label="Select client"  value="{!v.selectedClient}" onchange="{!c.setSelectedClient}" class="slds-m-bottom_x-small" >
+                            <option value="">select client</option>     
+                            <aura:iteration items="{!v.clients}" var="client">
+                                <option value="{!client.Id}">{!client.Name}</option>
+                            </aura:iteration>   
+                        </lightning:select>
+                        
+                        
+                        <lightning:select aura:id="selectSum" name="select" label="Select type summary"  value="{!v.selectedSummaryType}" onchange="{!c.setSelectedSummaryType}" >    
+                            <aura:iteration items="{!v.typesSummary}" var="summaryType">
+                                <option value="{!summaryType}">{!summaryType}</option>                            
+                            </aura:iteration>   
+                        </lightning:select>
+                    </div>
+                </article>
+            </div>
+            
+            <aura:if isTrue="{!((v.selectedSummaryType != '' &amp;&amp; v.isCheck) || (v.selectedSummaryType != '' &amp;&amp;  v.selectedClient != '') || (v.selectedSummaryType != '' &amp;&amp; v.searchStr)) &amp;&amp; (v.resSearch.keys.length > 0 &amp;&amp; v.resSearch.data.length > 0)}">
+                <div class="slds-col slds-size_12-of-12 slds-medium-size_8-of-12 slds-large-size_9-of-12 slds-m-top_medium">
+                    <article class="slds-card">
+                        <div class="slds-card__body slds-m-around_medium ">
+                            <aura:if isTrue="{!v.resSearch.keys.length==2}">
+                                <table class="slds-table slds-table_bordered slds-max-medium-table_stacked-horizontal slds-table_col-bordered " style="table-layout: fixed; width:33.3%">
+                                    <thead>
+                                        <tr class="slds-text-title_caps">
+                                            <td scope="col" width="50%">
+                                                <div class="slds-truncate" title="">{!v.resSearch.keys[0]}</div>
+                                            </td>
+                                            <td scope="col" >
+                                                <div class="slds-truncate" title="">{!v.resSearch.keys[1]}</div>
+                                            </td>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <aura:iteration items="{!v.resSearch.data}" var="dataitem">
+                                            <tr>
+                                                <aura:iteration items="{!dataitem}" var="i">
+                                                    <td data-label="{!i[0]}">
+                                                        <div class="slds-truncate" title="">{!i[1]}</div>
+                                                    </td>
+                                                </aura:iteration>
+                                            </tr>
+                                        </aura:iteration>
+                                    </tbody>
+                                </table>
+                                
+                                <aura:set attribute="else">
+                                    <table class="slds-table slds-table_bordered slds-max-medium-table_stacked-horizontal slds-table_col-bordered " style="table-layout: fixed">
+                                        <thead>
+                                            <tr class="slds-text-title_caps">
+                                                <aura:iteration items="{!v.resSearch.keys}" var="item">
+                                                    <td scope="col" >
+                                                        <div class="slds-truncate" title="Test">{!item}</div>
+                                                    </td>
+                                                </aura:iteration>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <aura:iteration items="{!v.resSearch.data}" var="dataitem">
+                                                <tr>
+                                                    <aura:iteration items="{!dataitem}" var="i">
+                                                        <td data-label="{!i[0]}">
+                                                            <div class="slds-truncate" title="">{!i[1]}</div>
+                                                        </td>
+                                                    </aura:iteration>
+                                                </tr>
+                                            </aura:iteration>
+                                        </tbody>
+                                    </table>
+                                </aura:set>
+                            </aura:if>
+                        </div>
+                    </article>   
+                </div>
+                <aura:set attribute="else">
+                    <aura:if isTrue="{!v.resSearch.keys.length == 0 &amp;&amp; v.resSearch.data.length == 0}" >
+                        <div class="slds-col slds-size_12-of-12 slds-medium-size_8-of-12 slds-large-size_9-of-12 slds-m-top_medium">
+                            <article class="slds-card">
+                                <div class="slds-card__body slds-m-around_medium ">
+                                    This client is not associated with any project or you did not create a query
+                                </div>
+                            </article>
+                        </div>
+                    </aura:if>
+                </aura:set>                                                           
+            </aura:if>
+        </div>
+    </aura:if>
+</aura:component>

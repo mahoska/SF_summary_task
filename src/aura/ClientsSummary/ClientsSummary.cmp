@@ -1,4 +1,13 @@
 <aura:component implements="force:appHostable" controller="L_ClientSummaryController">
+    <ltng:require scripts="{!join(',',
+                           $Resource.Highcharts + '/highcharts.js',
+                           $Resource.Highcharts + '/modules/data.js',
+                           $Resource.Highcharts + '/modules/drilldown.js',
+                           $Resource.Highcharts + '/modules/exporting.js',
+                           $Resource.Highcharts + '/modules/export-data.js'
+                           )}"
+                  afterScriptsLoaded="{!c.doInit}"/>
+    
     <aura:attribute name="searchStr" type="String" default=""/>
     <aura:attribute name="clients" type="List[]"/>
     <aura:attribute name="typesSummary" type="String[]"/>
@@ -7,9 +16,11 @@
     <aura:attribute name="resSearchBase" type="Object" />
     <aura:attribute name="resSearch" type="Object" />
     <aura:attribute name="isCheck" type="Boolean" default="false"/>
+    <aura:attribute name="isCheckForClients" type="Boolean" default="false"/>
     <aura:attribute name="isShow" type="Boolean" default="false"/>
+  
     
-    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <!--aura:handler name="init" value="{!this}" action="{!c.doInit}"/-->
     
     <div class="slds-grid ">
         <div class="slds-col slds-size_12-of-12 slds-medium-size_12-of-12 slds-large-size_12-of-12">
@@ -44,12 +55,14 @@
                         <div class="slds-form slds-form_stacked">
                             <div class="slds-form-element">
                                 <div class="slds-form-element__control">
-                                    <lightning:input type="search" label="Find client" name="search"  onchange="{!c.search}"   value='{!v.searchStr}'/>
+                                    <lightning:input type="search" label="" placeholder='Search Client' name="search"  onchange="{!c.search}"   value='{!v.searchStr}'/>
                                     <div class="slds-form-element">
                                         <div class="slds-form-element__control">
+                                            <div class="slds-clearfix slds-m-bottom_x-small">
+                                                <ui:inputCheckbox aura:id="checkbox" change="{!c.onCheck}" label="&nbsp;&nbsp;Summary Info For All Clients" class="slds-float_left"/>
+                                            </div>
                                             <div class="slds-clearfix">
-                                                <ui:inputCheckbox aura:id="checkbox" change="{!c.onCheck}" label="&nbsp;&nbsp;All (the information for all clients)" class="slds-float_left"/>
-                                                <span class="slds-form-element__label"></span>
+                                                <ui:inputCheckbox aura:id="checkboxForClients" change="{!c.onCheckForClients}" label="&nbsp;&nbsp;Comparative Info For All Clients" class="slds-float_left"/>
                                             </div>
                                         </div>
                                     </div>
@@ -60,15 +73,15 @@
                 </article>
                 <article class="slds-card">
                     <div class="slds-card__body slds-m-around_medium">
-                        <lightning:select aura:id="selectCl" name="select" label="Select client"  value="{!v.selectedClient}" onchange="{!c.setSelectedClient}" class="slds-m-bottom_x-small" >
-                            <option value="">select client</option>     
+                        <lightning:select aura:id="selectCl" name="select" label="Client:"  value="{!v.selectedClient}" onchange="{!c.setSelectedClient}" class="slds-m-bottom_x-small" >
+                            <option value="">Select Client</option>     
                             <aura:iteration items="{!v.clients}" var="client">
                                 <option value="{!client.Id}">{!client.Name}</option>
                             </aura:iteration>   
                         </lightning:select>
                         
                         
-                        <lightning:select aura:id="selectSum" name="select" label="Select type summary"  value="{!v.selectedSummaryType}" onchange="{!c.setSelectedSummaryType}" >    
+                        <lightning:select aura:id="selectSum" name="select" label="Summary Type:"  value="{!v.selectedSummaryType}" onchange="{!c.setSelectedSummaryType}" >    
                             <aura:iteration items="{!v.typesSummary}" var="summaryType">
                                 <option value="{!summaryType}">{!summaryType}</option>                            
                             </aura:iteration>   
@@ -77,8 +90,25 @@
                 </article>
             </div>
             
-            <aura:if isTrue="{!((v.selectedSummaryType != '' &amp;&amp; v.isCheck) || (v.selectedSummaryType != '' &amp;&amp;  v.selectedClient != '') || (v.selectedSummaryType != '' &amp;&amp; v.searchStr)) &amp;&amp; (v.resSearch.keys.length > 0 &amp;&amp; v.resSearch.data.length > 0)}">
-                <div class="slds-col slds-size_12-of-12 slds-medium-size_8-of-12 slds-large-size_9-of-12 slds-m-top_medium">
+            <div class="slds-col slds-size_12-of-12 slds-medium-size_8-of-12 slds-large-size_9-of-12 slds-m-top_medium">
+                  <div  id='DashboardDiv' class="slds-m-bottom_x-small">
+                	<aura:if isTrue="{!(v.isCheck || v.selectedClient != '')}">
+                        <article class="slds-card">
+                            <div class="slds-card__body slds-m-around_medium" style="min-width: 310px; height: 400px;" >
+                                <div id="container" aura:id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+                            </div>
+                        </article>
+                    </aura:if>
+                    
+                    <aura:if isTrue="{!(v.searchStr || v.isCheckForClients)}">
+                        <article class="slds-card">
+                            <div class="slds-card__body slds-m-around_medium" style="min-width: 310px; height: 400px;" >
+                                <div id="containerInput" aura:id="containerInput" style="min-width: 310px;  height: 400px; margin: 0 auto;"></div>
+                            </div>
+                        </article>
+                    </aura:if>
+               </div>
+                <aura:if isTrue="{!((v.selectedSummaryType != '' &amp;&amp; v.isCheck) || (v.selectedSummaryType != '' &amp;&amp;  v.selectedClient != '') || (v.selectedSummaryType != '' &amp;&amp; v.searchStr) ||  (v.selectedSummaryType != '' &amp;&amp; v.isCheckForClients)) &amp;&amp; (v.resSearch.keys.length > 0 &amp;&amp; v.resSearch.data.length > 0) }">
                     <article class="slds-card">
                         <div class="slds-card__body slds-m-around_medium ">
                             <aura:if isTrue="{!v.resSearch.keys.length==2}">
@@ -132,20 +162,19 @@
                                 </aura:set>
                             </aura:if>
                         </div>
-                    </article>   
-                </div>
-                <aura:set attribute="else">
-                    <aura:if isTrue="{!v.resSearch.keys.length == 0 &amp;&amp; v.resSearch.data.length == 0}" >
-                        <div class="slds-col slds-size_12-of-12 slds-medium-size_8-of-12 slds-large-size_9-of-12 slds-m-top_medium">
+                    </article>  
+                    
+                    <aura:set attribute="else">
+                        <aura:if isTrue="{!v.resSearch.keys.length == 0 &amp;&amp; v.resSearch.data.length == 0}" >
                             <article class="slds-card">
                                 <div class="slds-card__body slds-m-around_medium ">
-                                    This client is not associated with any project or you did not create a query
+                                    This client is not associated with any project 
                                 </div>
                             </article>
-                        </div>
-                    </aura:if>
-                </aura:set>                                                           
-            </aura:if>
+                        </aura:if>
+                    </aura:set>                                                           
+                </aura:if>
+            </div>
         </div>
-    </aura:if>
+    </aura:if>      
 </aura:component>

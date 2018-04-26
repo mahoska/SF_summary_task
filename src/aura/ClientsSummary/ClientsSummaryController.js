@@ -18,6 +18,12 @@
                 
                 component.set("v.clients", data['clients']); 
                 component.set("v.typesSummary", data['summaryTypes']);
+                
+                if(component.get("v.resSearchBase") == null){
+                    component.find("checkbox").set("v.value", true);
+                    component.set("v.isCheck", true);
+                    helper.getSummary(component, 'All');
+                }
             }               
             else if (response.getState() === 'ERROR'){
                 component.set("v.isShow", false);
@@ -34,12 +40,8 @@
     },
     
     search: function(component, event, helper){
-        component.set("v.selectedSummaryType", 'All');
-        component.set("v.selectedClient",'');
-        component.find("checkbox").set("v.value", false);
-        component.set("v.isCheck", false);
         var search = event.getSource().get("v.value");
-        component.set("v.searchStr", search);
+        helper.settings(component, 'All', '', false, false, false, false, search) ;
         if(search != ''){
             helper.getSummary(component, 'input');
         }else{
@@ -50,13 +52,8 @@
     },
     
     setSelectedClient: function(component, event, helper){
-        //component.set("v.selectedClient",component.find('selectCl').get("v.value"));
-        component.set("v.selectedSummaryType", 'All');
-        component.set("v.searchStr", '');
-        component.find("checkbox").set("v.value", false);
-        component.set("v.isCheck", false);
         var selectClient = event.getSource().get("v.value");
-        component.set("v.selectedClient", selectClient);
+        helper.settings(component, 'All', selectClient, false, false, false, false, '') ;
         if(selectClient != ''){
             helper.getSummary(component, 'picklist');
         }
@@ -70,17 +67,27 @@
         if(baseSearchInfo!=null){
             var res = helper.parseData(baseSearchInfo,selectedSummaryType);
             component.set("v.resSearch", res);
+            if(component.get("v.selectedClient")!='' ||  component.get("v.isCheck") == true){
+                helper.createDashboard(component, res['data'][0]);
+            }else if(component.get("v.searchStr")!='' || component.get("v.isCheckForClients") == true){
+                helper.createDashboardForSearch(component, res);
+            }
         }
     },
     
     onCheck: function(component, event, helper) {
         var check = component.find("checkbox").get("v.value");
-        component.set("v.selectedSummaryType", 'All');
-        component.set("v.searchStr", '');
-        component.set("v.selectedClient",'');
-        component.set("v.isCheck", true);
+        helper.settings(component, 'All', '', check, true, false, false, '') ;
         if(check){
             helper.getSummary(component, 'All');
+        }
+    },
+    
+    onCheckForClients: function(component, event, helper) {
+        var check = component.find("checkboxForClients").get("v.value"); 
+        helper.settings(component, 'All', '', false, false, true, check, '') ;
+        if(check){
+            helper.getSummary(component, 'AllForClients');
         }
     }
     

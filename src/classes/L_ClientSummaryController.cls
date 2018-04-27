@@ -5,9 +5,8 @@ public with sharing class L_ClientSummaryController {
         public static Map<String, List<Object>>  getPickListData() {
             try{
                 CheckAccessRight.checkPermission();
-                List<Account> clients =  getClients();
                 Map<String, List<Object>>  data =  new  Map<String, List<Object>>();
-                data.put('clients', clients);
+                data.put('clients', getClients());
                 data.put('summaryTypes', summaryTypes);
                 return data;
             }catch(Exception e){
@@ -19,7 +18,7 @@ public with sharing class L_ClientSummaryController {
     public static List<Account> getClients(){
         try{
             CheckAccessRight.checkAccPermission();
-            return [SELECT Id, Name	FROM Account];
+            return [SELECT Id, Name	FROM Account LIMIT 1000];
         }catch(Exception e){
             System.debug('ERROR catch getClients:'+ e);
             return  null;
@@ -55,12 +54,8 @@ public with sharing class L_ClientSummaryController {
         try{
             if(!String.isEmpty(searchText)){
                 CheckAccessRight.checkAccPermission();
-                
-                String s = 'Select Id FROM Account WHERE Name Like \'' + searchText + '%\'';
-                System.debug(s);
+                String s = 'Select Id FROM Account WHERE Name Like \'' + searchText + '%\' LIMIT 1000';
                 List<Account> accs = Database.query(s);
-                System.debug(accs);
-                System.debug('AFTER QUERY');
                 return getSearchInfoByAccounts(accs);
             }else{
                 return  '';
@@ -75,7 +70,7 @@ public with sharing class L_ClientSummaryController {
     public static String getSummaryBySerchCheckBox(){
         try{
             CheckAccessRight.checkPermission();
-            List<Account> accs  =  [SELECT  Id  FROM Account];
+            List<Account> accs  =  [SELECT  Id  FROM Account LIMIT 1000];
             List<AggregateResult> info = [
                 SELECT COUNT(Id) projects, SUM(Hours__c) hours, SUM( Developers__c) devs, 
                 SUM(QA_s__c) qas, SUM( Team_Members__c ) skills

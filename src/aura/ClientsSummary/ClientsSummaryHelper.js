@@ -1,4 +1,44 @@
 ({
+    getInitPicklistData: function(component){
+        var action = component.get("c.getPickListData");
+        var self = this;
+        action.setCallback(this, function(response) {
+            var state = response.getState();
+            if (state === "SUCCESS") {
+                component.set("v.isShow", true);
+                var data = response.getReturnValue();
+                
+                for(var i=0; i< data['clients'].length; i++){
+                    var sliced =(data['clients'][i].Name).slice(0,28);
+                    if (sliced.length < (data['clients'][i].Name).length) {
+                        sliced += '...';
+                        data['clients'][i].Name = sliced;
+                    }
+                }
+                
+                component.set("v.clients", data['clients']); 
+                component.set("v.typesSummary", data['summaryTypes']);
+                
+                if(component.get("v.resSearchBase") == null){
+                    component.find("checkbox").set("v.value", true);
+                    component.set("v.isCheck", true);
+                    self.getSummary(component, 'All');
+                }
+            }               
+            else if (response.getState() === 'ERROR'){
+                component.set("v.isShow", false);
+                var errors = response.getError();
+                if (errors) {
+                    if (errors[0] && errors[0].message) {
+                        component.set("v.isShow", false);
+                        self.showErrorToast();
+                    }
+                } 
+            }
+        });
+        $A.enqueueAction(action);
+    },
+    
     getSummary : function(component, fromWhat) {
         var action;
         switch(fromWhat){
